@@ -117,7 +117,7 @@ public abstract class DQN implements Serializable
 		
 		double reward = executeActionAndGetReward(actionIndex);
 		double[] statePrime = getState();
-		
+				
 		Experience exp = new Experience(state, statePrime, actionIndex, reward, isDone());
 		memory.add(exp);
 		learn(exp);
@@ -132,11 +132,13 @@ public abstract class DQN implements Serializable
 	
 	private void replay()
 	{
+
 		if(memory.size() >= 10000)
 		{
 			for(int i = 0; i < 50; i++)
 			{
 				Experience exp = memory.remove((int)(Math.random() * memory.size()));
+				
 				learn(exp);
 			}
 		}
@@ -144,7 +146,15 @@ public abstract class DQN implements Serializable
 	
 	private void learn(Experience exp)
 	{
-		double[] state = exp.getState();
+		double[] state = null;
+		try {
+		state = exp.getState();
+		}
+		catch(Exception e)
+		{
+			System.out.println(exp);
+			System.out.println(exp.getState());
+		}
 		double[] nextState = exp.getNextState();
 		double reward = exp.getReward();
 		int actionIndex = exp.getActionIndex();

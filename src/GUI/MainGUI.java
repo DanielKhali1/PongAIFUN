@@ -1,15 +1,19 @@
 package GUI;
 
+import java.io.FileInputStream;
 import java.util.Random;
 
 import Agent.PongDQN;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
@@ -42,7 +46,7 @@ public class MainGUI extends Application
 	
 	Timeline timeline = new Timeline();
 	
-	PongDQN agent1 = new PongDQN(0.001, 0.995);
+	PongDQN agent1;
 	int iteration = 0;
 	
 	double speed = 15;
@@ -56,6 +60,7 @@ public class MainGUI extends Application
 	double movingy = 0;
 	
 	public int humanScore = 0;
+	public int staticScore = 0;
 
 	Pane dqnSetupPane;
 	boolean dqnPaneCreated = false;
@@ -155,78 +160,106 @@ public class MainGUI extends Application
 	{
 		KeyFrame keyFrame = new KeyFrame(duration, action ->
 		{
-			
-			realPlayerMovement();
-			
-			
-			//ai paddle
-			if(paddle1.getLayoutY()+65 > ball.getLayoutY() && paddle1.getLayoutY() >= 0)
-			{
-		        paddle1.setLayoutY(paddle1.getLayoutY() - 10);
-			}
-			else if(paddle1.getLayoutY()+65 < ball.getLayoutY() && paddle1.getLayoutY() + 130 <= 950)
-			{
-		        paddle1.setLayoutY(paddle1.getLayoutY() + 10);
-			}
-			
-			
-			
-			
-			if(ball.getLayoutY() > 800 || ball.getLayoutY() < 0)
-			{
-				movingy *= -1;
-			}
-			
-			if(ball.getLayoutY() > paddle2.getLayoutY() && ball.getLayoutY() < paddle2.getLayoutY()+130 && ball.getLayoutX() >= 950 )
-			{
-				if(Math.abs(movingx) >= 600)
-					movingx *= -1;
-				else
+			if(!dynamic)
+			{	
+				realPlayerMovement();
+				
+				
+				//ai paddle
+				if(paddle1.getLayoutY()+65 > ball.getLayoutY() && paddle1.getLayoutY() >= 0)
 				{
-					movingx *= -1.2;
-					movingy *= 1.2;
+			        paddle1.setLayoutY(paddle1.getLayoutY() - 10);
+				}
+				else if(paddle1.getLayoutY()+65 < ball.getLayoutY() && paddle1.getLayoutY() + 130 <= 950)
+				{
+			        paddle1.setLayoutY(paddle1.getLayoutY() + 10);
 				}
 				
-				numberOfBounces++;
-			}
-			else if(ball.getLayoutY() > paddle1.getLayoutY() && ball.getLayoutY() < paddle1.getLayoutY()+130 && ball.getLayoutX() <= 45)
-			{
-				if(Math.abs(movingx) >= 600)
-					movingx *= -1;
-				else
+				
+				
+				
+				if(ball.getLayoutY() > 800 || ball.getLayoutY() < 0)
 				{
-					movingx *= -1.2;
-					movingx *= 1.2;
+					movingy *= -1;
 				}
 				
-				numberOfBounces++;
+				if(ball.getLayoutY() > paddle2.getLayoutY() && ball.getLayoutY() < paddle2.getLayoutY()+130 && ball.getLayoutX() >= 950 )
+				{
+					if(Math.abs(movingx) >= 600)
+						movingx *= -1;
+					else
+					{
+						movingx *= -1.2;
+						movingy *= 1.2;
+					}
+					
+					numberOfBounces++;
+				}
+				else if(ball.getLayoutY() > paddle1.getLayoutY() && ball.getLayoutY() < paddle1.getLayoutY()+130 && ball.getLayoutX() <= 45)
+				{
+					if(Math.abs(movingx) >= 600)
+						movingx *= -1;
+					else
+					{
+						movingx *= -1.2;
+						movingx *= 1.2;
+					}
+					
+					numberOfBounces++;
+				}
+				else if(ball.getLayoutX() > 1000)
+				{
+					staticScore++;
+					resetBall();
+				}
+				else if(ball.getLayoutX() < 0)
+				{
+					humanScore++;
+					resetBall();
+				}
+				
+				
+				ball.setLayoutX(movingx + ball.getLayoutX());
+				ball.setLayoutY(movingy + ball.getLayoutY());		
+				
+				Player1Score.setText("Score: \t" + staticScore);
+				numberOfBouncesTxt.setText("Bounces: " + numberOfBounces);
+
 			}
-			else if(ball.getLayoutX() > 1000)
+			else
 			{
-				agent1.setScore(agent1.getScore()+1);
-				resetBall();
+				agent1.step();
+				
+				if(agent1.isDone())
+				{
+					agent1.reset();
+				}
+				
+				ball.setLayoutX(agent1.getBallX());
+				ball.setLayoutY(agent1.getBallY());
+				
+				paddle2.setLayoutX(agent1.getOpponentX());
+				paddle2.setLayoutY(agent1.getOpponentY());
+				
+				paddle1.setLayoutX(agent1.getPaddleX());
+				paddle1.setLayoutY(agent1.getPaddleY());
+				
+				if(humanScore > 0)
+				{
+					agent1.reset();
+				}
+				//System.out.println("PlayerScore: " + agent1.getScore());
+				//System.out.println("PlayerScore: " + humanScore);
+
+				
+				numberOfBouncesTxt.setText("Bounces: " + agent1.bounces);
+				Player1Score.setText("Score: \t" + agent1.getScore());
+				Player2Score.setText("Score: \t" + agent1.humanScore);
 			}
-			else if(ball.getLayoutX() < 0)
-			{
-				humanScore++;
-				resetBall();
-			}
-			
-			
-			ball.setLayoutX(movingx + ball.getLayoutX());
-			ball.setLayoutY(movingy + ball.getLayoutY());			
-			
-			//adds to score if snake eats objective item
-			Player1Score.setText("Score: \t" + agent1.getScore());
+
 			Player2Score.setText("Score: \t" + humanScore);
 			
 			ballSpeedTxt.setText("Ball Speed: " + Math.abs((int)movingx));
-			numberOfBouncesTxt.setText("Bounces: " + numberOfBounces);
-		    
-		    //---------------------------- AI Integration ------------------------------- //
-			
-
-
 		});
 		
 		return keyFrame;
@@ -331,7 +364,7 @@ public class MainGUI extends Application
 		txtEpsilonDecay.setFill(Color.WHITE);
 		createNewPane.getChildren().add(txtEpsilonDecay);
 		
-		TextField tfEpsilonDecay = new TextField();
+		TextField tfEpsilonDecay = new TextField("0.99999");
 		tfEpsilonDecay.setLayoutX(20);
 		tfEpsilonDecay.setLayoutY(80+20);
 		tfEpsilonDecay.setStyle("-fx-border-color: 'black'");
@@ -344,7 +377,7 @@ public class MainGUI extends Application
 		txtLearningRate.setFill(Color.WHITE);
 		createNewPane.getChildren().add(txtLearningRate);
 		
-		TextField tfLearningRate = new TextField();
+		TextField tfLearningRate = new TextField("0.001");
 		tfLearningRate.setLayoutX(20);
 		tfLearningRate.setLayoutY(140+20);
 		tfLearningRate.setStyle("-fx-border-color: 'black'");
@@ -357,7 +390,7 @@ public class MainGUI extends Application
 		txtDiscountFactor.setFill(Color.WHITE);
 		createNewPane.getChildren().add(txtDiscountFactor);
 		
-		TextField tfDiscountFactor = new TextField();
+		TextField tfDiscountFactor = new TextField("0.995");
 		tfDiscountFactor.setLayoutX(20);
 		tfDiscountFactor.setLayoutY(200+20);
 		tfDiscountFactor.setStyle("-fx-border-color: 'black'");
@@ -378,7 +411,7 @@ public class MainGUI extends Application
 		txtHittingBall.setFill(Color.WHITE);
 		createNewPane.getChildren().add(txtHittingBall);
 		
-		TextField tfHittingBall = new TextField();
+		TextField tfHittingBall = new TextField("1");
 		tfHittingBall.setLayoutX(300);
 		tfHittingBall.setLayoutY(80+20);
 		tfHittingBall.setStyle("-fx-border-color: 'black'");
@@ -391,7 +424,7 @@ public class MainGUI extends Application
 		txtScoredOn.setFill(Color.WHITE);
 		createNewPane.getChildren().add(txtScoredOn);
 		
-		TextField tfScoredOn = new TextField();
+		TextField tfScoredOn = new TextField("-1");
 		tfScoredOn.setLayoutX(300);
 		tfScoredOn.setLayoutY(140+20);
 		tfScoredOn.setStyle("-fx-border-color: 'black'");
@@ -404,7 +437,7 @@ public class MainGUI extends Application
 		txtScoring.setFill(Color.WHITE);
 		createNewPane.getChildren().add(txtScoring);
 		
-		TextField tfScoring = new TextField();
+		TextField tfScoring = new TextField("3");
 		tfScoring.setLayoutX(300);
 		tfScoring.setLayoutY(200+20);
 		tfScoring.setStyle("-fx-border-color: 'black'");
@@ -418,6 +451,9 @@ public class MainGUI extends Application
 		btnTrain.setStyle("-fx-background-color: 'black'; -fx-text-fill: 'white'; -fx-border-color: white; -fx-font-size: 20; -fx-padding: 10;");
 		createNewPane.getChildren().add(btnTrain);
 		
+		scroll.setOnMouseClicked( e ->{
+			
+		});
 		
 		btnTrain.setOnMouseEntered( e ->
 		{
@@ -429,6 +465,114 @@ public class MainGUI extends Application
 		{
 			if(train)
 				btnTrain.setStyle("-fx-background-color: 'black'; -fx-text-fill: 'white'; -fx-border-color: white; -fx-font-size: 20; -fx-padding: 10;");
+		});
+		
+		btnTrain.setOnAction(e ->{
+			if(train)
+			{
+				double learningRate = Double.parseDouble(tfLearningRate.getText());
+				double discountFactor = Double.parseDouble(tfDiscountFactor.getText());
+				double EpsilonDecay = Double.parseDouble(tfEpsilonDecay.getText());
+				double hittingBall = Double.parseDouble(tfHittingBall.getText());
+				double scoring = Double.parseDouble(tfScoring.getText());
+				double scoredOn = Double.parseDouble(tfScoredOn.getText());
+				
+				//	public PongDQN(double learningRate, double discountFactor, double EpsilonDecay, double hittingBall, double scoring, double scoredOn)
+				agent1 = new PongDQN(learningRate, discountFactor, EpsilonDecay, hittingBall, scoring, scoredOn);
+				
+				Pane tempPane = new Pane();
+				tempPane.setStyle("-fx-background-color: 'black'");
+				Stage tempStage = new Stage();
+				Scene tempScene = new Scene(tempPane, 500, 500);
+				tempStage.setScene(tempScene);
+				
+				Image gif;
+				try {
+					gif = new Image(new FileInputStream("loadingpong.gif"));
+
+
+				ImageView giffyboi = new ImageView(gif);
+				giffyboi.setLayoutX(125);
+				giffyboi.setLayoutY(125);
+				tempPane.getChildren().add(giffyboi);
+				}
+				catch(Exception a)
+				{
+					System.out.println("houston theres a problem");
+				}
+				
+				Text txtTraining = new Text("Training...");
+				txtTraining.setLayoutX(230);
+				txtTraining.setLayoutY(450);
+				txtTraining.setFill(Color.WHITE);
+				tempPane.getChildren().add(txtTraining);
+
+				tempStage.show();
+//				
+				new Thread(new Runnable() 
+				{
+
+					@Override
+					public void run() 
+					{
+						
+						for(int round = 0; round < 30; round++)
+						{
+							double averageScore = 0;
+							int maxScore = 0;
+							double averageEpsilon = 0;
+							int totalSteps = 0;
+							int averageBounce = 0;
+							for(int gameIndex = 0; gameIndex < 500; gameIndex++)
+							{
+								agent1.reset();
+
+								while(!agent1.isDone())
+								{
+									totalSteps++;
+									averageEpsilon += agent1.getEpsilon();
+									agent1.step();
+
+									
+									//System.out.println(agent1.humanScore + " " + agent1.getScore());
+									//System.out.println(agent1.getSteps());
+									//System.out.println(round + "," + averageScore + "," + maxScore + "," + averageEpsilon+"\n");
+								}
+								averageBounce += agent1.bounces;
+								averageScore += agent1.getScore();
+
+								if(agent1.getScore() > maxScore)
+								{
+									maxScore = agent1.getScore();
+								}
+							}
+							averageBounce /= 500;
+							averageScore /= 500;
+							averageEpsilon /= (double)totalSteps;
+							//System.out.println(round + "," + averageScore + "," + maxScore + "," + averageEpsilon);
+							System.out.println(round + "," + averageBounce + "," + averageScore + "," + maxScore + "," + averageEpsilon+"\n");
+
+						
+						Platform.runLater(new Runnable() 
+						{
+							@Override
+							public void run() 
+							{
+								tempStage.close();
+							}
+							
+						});
+						
+					}
+					
+					}
+					
+			}).start();
+				
+				
+				
+				
+			}
 		});
 		
 		
@@ -460,9 +604,31 @@ public class MainGUI extends Application
 			
 			train = true;
 
-
 		});
 		
+		Button btnDQNvsSTATIC = new Button("DQN vs Static");
+		btnDQNvsSTATIC.setLayoutX(427);
+		btnDQNvsSTATIC.setLayoutY(470);
+		btnDQNvsSTATIC.setStyle("-fx-background-color: 'black'; -fx-text-fill: 'white'; -fx-border-color: white; -fx-font-size: 20; -fx-padding: 10;");
+		createNewPane.getChildren().add(btnDQNvsSTATIC);
+		
+		btnDQNvsSTATIC.setOnMouseEntered( e ->
+		{
+			btnDQNvsSTATIC.setStyle("-fx-background-color: 'white'; -fx-text-fill: 'black'; -fx-border-color: white; -fx-font-size: 20; -fx-padding: 10;");
+		});
+		
+		btnDQNvsSTATIC.setOnMouseExited( e ->
+		{
+			btnDQNvsSTATIC.setStyle("-fx-background-color: 'black'; -fx-text-fill: 'white'; -fx-border-color: white; -fx-font-size: 20; -fx-padding: 10;");
+		});
+		
+		btnDQNvsSTATIC.setOnAction( e ->
+		{
+			dynamic = true;
+			menuPane.setVisible(false);
+			dqnSetupPane.setVisible(false);
+			timeline.play();
+		});
 		
 		
 		
@@ -507,7 +673,7 @@ public class MainGUI extends Application
 		
 		gamePane.setOnMouseMoved(e ->
 		{
-			paddle2.setLayoutY(e.getY());
+			paddle2.setLayoutY(e.getY()-65);
 		});
 	
 		
