@@ -244,11 +244,11 @@ public class MainGUI extends Application
 				paddle1.setLayoutX(agent1.getPaddleX());
 				paddle1.setLayoutY(agent1.getPaddleY());
 				
-				if(humanScore > 0)
+				if(humanScore > 10 || agent1.getScore() > 10)
 				{
 					agent1.reset();
 				}
-				//System.out.println("PlayerScore: " + agent1.getScore());
+				System.out.println("AgentScore: " + agent1.getScore());
 				//System.out.println("PlayerScore: " + humanScore);
 
 				
@@ -516,7 +516,7 @@ public class MainGUI extends Application
 					public void run() 
 					{
 						
-						for(int round = 0; round < 30; round++)
+						for(int round = 0; round < 5; round++)
 						{
 							double averageScore = 0;
 							int maxScore = 0;
@@ -525,6 +525,7 @@ public class MainGUI extends Application
 							int averageBounce = 0;
 							for(int gameIndex = 0; gameIndex < 500; gameIndex++)
 							{
+								System.out.println("round " + round + " game " + gameIndex);
 								agent1.reset();
 
 								while(!agent1.isDone())
@@ -532,6 +533,11 @@ public class MainGUI extends Application
 									totalSteps++;
 									averageEpsilon += agent1.getEpsilon();
 									agent1.step();
+									
+									if(humanScore > 10)
+									{
+										break;
+									}
 
 									
 									//System.out.println(agent1.humanScore + " " + agent1.getScore());

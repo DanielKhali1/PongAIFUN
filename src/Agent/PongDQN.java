@@ -33,7 +33,7 @@ public class PongDQN extends DQN implements Serializable
 	private double paddleX;
 	
 	private double OpponentY;
-	private double OpponentX;
+	private double OpponentX; 
 	
 	
 	private double movingx;
@@ -50,7 +50,7 @@ public class PongDQN extends DQN implements Serializable
 	public int bounces;
 	
 	
-	final static int[] topology = {4, 30, 30, 7};
+	final static int[] topology = {4, 80, 80, 5};
 		
 	
 	public PongDQN(double learningRate, double discountFactor, double EpsilonDecay, double hittingBall, double scoring, double scoredOn)
@@ -94,6 +94,7 @@ public class PongDQN extends DQN implements Serializable
 	public void reset()
 	{
 		bounces = 0;
+		score = 0;
 		
 		gameOver = false;
 		
@@ -125,8 +126,8 @@ public class PongDQN extends DQN implements Serializable
 		return new double[] { 
 				Relu(Math.abs(getPaddleY()-getBallY())),
 				Relu(Math.abs(getPaddleX()-getBallX())),
-				Relu(getMovingx()),
-				Relu(getMovingy()),
+				Relu(getBallX()),
+				Relu(getBallY()),
 				};
 	}
 	
@@ -147,22 +148,18 @@ public class PongDQN extends DQN implements Serializable
 		//System.out.println(action);
 		
 		double reward = 0;
-		
+				
 		switch(action)
 		{
 		case 0: setPaddleY(getPaddleY() - 15);
 			break;
-		case 1: setPaddleY(getPaddleY() - 10);
+		case 1: setPaddleY(getPaddleY() - 5);
 			break;
-		case 2: setPaddleY(getPaddleY() - 5);
+		case 2: setPaddleY(getPaddleY() + 0);
 			break;
-		case 3: setPaddleY(getPaddleY() + 0);
+		case 3: setPaddleY(getPaddleY() + 5);
 			break;
-		case 4: setPaddleY(getPaddleY() + 5);
-			break;
-		case 5: setPaddleY(getPaddleY() + 10);
-			break;
-		case 6: setPaddleY(getPaddleY() + 15);
+		case 4: setPaddleY(getPaddleY() + 15);
 			break;
 		}
 		
@@ -222,7 +219,7 @@ public class PongDQN extends DQN implements Serializable
 			setScore(getScore()+1);
 			resetBall();
 			
-			if(score > 0)
+			if(score > 10)
 			{
 				gameOver = true;
 			}
@@ -233,7 +230,7 @@ public class PongDQN extends DQN implements Serializable
 			humanScore++;
 			resetBall();
 			
-			if(humanScore > 0)
+			if(humanScore > 10)
 			{
 				gameOver = true;
 			}
